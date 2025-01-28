@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('token');
             $table->string('device');
             $table->string('ip_address');
+            $table->text('payload')->nullable();
+            $table->integer('last_activity')->nullable();
+            $table->text('user_agent')->nullable();
             $table->dateTime('expires_at');
             $table->timestamps();
         });
