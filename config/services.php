@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'coinapi' => [
+        'key' => env('COINAPI_KEY'),
+    ],
+
 ];

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\CryptoController;
 use App\Http\Controllers\API\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -12,5 +13,6 @@ Route::group(['name' => 'App\Http\Controllers\Api' ] , function() {
 
     Route::apiResource('users' , UserController::class);
     Route::post('auth',[UserController::class , 'auth']);
+    Route::get('/crypto-prices', [CryptoController::class, 'getCryptoPrices']);
 });
 
