@@ -18,9 +18,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-         $target = $user->findOrFail($user);
-        
-         return $target;
+        return response()->json($user); 
 
     }
 
