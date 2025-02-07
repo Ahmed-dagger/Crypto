@@ -39,4 +39,9 @@ return [
         'key' => env('COINAPI_KEY'),
     ],
 
+    'binance' => [
+        'key' => env('BINANCE_API_KEY'),
+        'secret' => env('BINANCE_API_SECRET'),
+    ],
+
 ];
