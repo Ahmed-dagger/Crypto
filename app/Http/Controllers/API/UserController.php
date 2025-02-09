@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -50,32 +53,6 @@ class UserController extends Controller
         ], 401);
     }
 
-    public function store(Request $request)
-    {
-     
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
 
-        $validated['password'] = bcrypt($validated['password']);
 
-        if (User::where('email', $validated['email'])->exists()) {
-            return response()->json(['error' => 'User already exists.'], 409);
-        }
-
-    try {
-        $user = User::create($validated);
-        return response()->json(['user' => $user], 201); // Return 201 Created
-    } catch (\Exception $e) {
-        // Log the error and return a 500 response
-        Log::error('Error creating user: '.$e->getMessage());
-        return response()->json([
-    'error' => 'An error occurred while creating the user.',
-    'message' => config('app.debug') ? $e->getMessage() : 'Please try again later.',
-        ], 500);
-    }
-
-    }
 }
