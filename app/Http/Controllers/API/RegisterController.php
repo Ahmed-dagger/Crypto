@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -13,53 +14,73 @@ use Carbon\Carbon;
 
 class RegisterController extends Controller
 {
-    
+
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email',
             'google_id' => 'nullable|string|unique:users,google_id', // Google Sign-In
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
-    
+
         $validated = $validator->validated();
-    
+
         // Check if the user already exists
         $user = User::where('email', $validated['email'])->first();
-    
-        if ($user && $user->email_verified_at) {
-            return response()->json(['message' => 'User already verified.'], 200);
-        }
-    
-        // Generate a 6-digit OTP
-        $otp = rand(100000, 999999);
-    
-        try {
-            // Store OTP in the database
-            $user = User::updateOrCreate(
-                ['email' => $validated['email']],
-                [
-                    'name' => $validated['name'],
-                    'google_id' => $validated['google_id'] ?? null,
-                    'otp' => $otp,
-                    'password' => bcrypt('temporary_password'), 
-                ]
-            );
-    
-            // Send OTP via email
+
+        if ($user) {
+            if ($user->email_verified_at) {
+                return response()->json(['message' => 'User already verified.'], 200);
+            }
+
+            if ($user->otp_expires_at && now()->lt($user->otp_expires_at)) {
+                return response()->json(['message' => 'OTP already sent. Please wait or check your email.'], 200);
+            }
+
+            // If user exists but is not verified, allow OTP resend
+            $otp = rand(100000, 999999);
+            $user->update([
+                'otp' => $otp,
+                'otp_expires_at' => now()->addMinutes(3),
+            ]);
+
+            // Resend OTP email
             Mail::send([], [], function ($message) use ($validated, $otp) {
                 $message->to($validated['email'])
-                        ->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME')) // Set sender email
-                        ->subject('Verify Your Email - OTP Code')
-                        ->html("<p>Your OTP code is: <strong>$otp</strong></p>"); // Correct syntax for HTML email
+                    ->from('ahdbo124@gmail.com', 'BitWest Support')
+                    ->subject('Verify Your Email - OTP Code')
+                    ->html("<p>Your new OTP code is: <strong>$otp</strong></p>");
             });
-            
-            
-    
+
+            return response()->json(['message' => 'New OTP sent.'], 200);
+        }
+
+        // Generate a new OTP for first-time users
+        $otp = rand(100000, 999999);
+
+        try {
+            // Create new user with temporary password
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'google_id' => $validated['google_id'] ?? null,
+                'otp' => $otp,
+                'otp_expires_at' => now()->addMinutes(3),
+                'password' => bcrypt('temporary_password'),
+            ]);
+
+            // Send OTP email
+            Mail::send([], [], function ($message) use ($validated, $otp) {
+                $message->to($validated['email'])
+                    ->from('ahdbo124@gmail.com', 'BitWest Support')
+                    ->subject('Verify Your Email - OTP Code')
+                    ->html("<p>Your OTP code is: <strong>$otp</strong></p>");
+            });
+
             return response()->json(['message' => 'OTP sent to email.', 'email' => $validated['email']], 200);
         } catch (\Exception $e) {
             Log::error('Error sending OTP: ' . $e->getMessage());
@@ -67,8 +88,9 @@ class RegisterController extends Controller
                 'error' => 'Failed to send OTP. Try again later.',
                 'message' => config('app.debug') ? $e->getMessage() : 'Something went wrong.',
             ], 500);
-        } 
+        }
     }
+
 
     public function verifyOtp(Request $request)
     {
@@ -120,4 +142,5 @@ class RegisterController extends Controller
         return response()->json(['message' => 'Password set successfully. You can now log in.'], 200);
     }
 
+    
 }

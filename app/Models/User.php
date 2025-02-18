@@ -20,7 +20,15 @@ class User extends Authenticatable
      */
     protected $fillable = [
         
-        'email', 'password', 'role', 'status', 'name', 'two_factor_enabled','google_id', 'otp','email_verified_at',
+        'email',
+        'password',
+        'role',
+        'status',
+        'name',
+        'two_factor_enabled',
+        'google_id', 'otp',
+        'email_verified_at',
+        'otp_expires_at',
     ];
 
     // A user can have many wallets
