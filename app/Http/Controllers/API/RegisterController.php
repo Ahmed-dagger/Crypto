@@ -45,13 +45,13 @@ class RegisterController extends Controller
             $otp = rand(100000, 999999);
             $user->update([
                 'otp' => $otp,
-                'otp_expires_at' => now()->addMinutes(3),
+                'otp_expires_at' => now()->addMinutes(5),
             ]);
 
             // Resend OTP email
             Mail::send([], [], function ($message) use ($validated, $otp) {
                 $message->to($validated['email'])
-                    ->from('ahdbo124@gmail.com', 'BitWest Support')
+                    ->from('support@bitwest.online', 'BitWest Support')
                     ->subject('Verify Your Email - OTP Code')
                     ->html("<p>Your new OTP code is: <strong>$otp</strong></p>");
             });
@@ -69,14 +69,14 @@ class RegisterController extends Controller
                 'email' => $validated['email'],
                 'google_id' => $validated['google_id'] ?? null,
                 'otp' => $otp,
-                'otp_expires_at' => now()->addMinutes(3),
+                'otp_expires_at' => now()->addMinutes(5),
                 'password' => bcrypt('temporary_password'),
             ]);
 
             // Send OTP email
             Mail::send([], [], function ($message) use ($validated, $otp) {
                 $message->to($validated['email'])
-                    ->from('ahdbo124@gmail.com', 'BitWest Support')
+                    ->from('support@bitwest.online', 'BitWest Support')
                     ->subject('Verify Your Email - OTP Code')
                     ->html("<p>Your OTP code is: <strong>$otp</strong></p>");
             });
