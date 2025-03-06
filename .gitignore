@@ -7,6 +7,7 @@
 /storage/pail
 /vendor
 .env
+Crypto-app.zip
 .env.backup
 .env.production
 .phpactor.json

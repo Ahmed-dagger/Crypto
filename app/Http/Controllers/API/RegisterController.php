@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -115,6 +116,14 @@ class RegisterController extends Controller
             'otp' => null // Clear OTP after verification
         ]);
 
+        $userWallet = Wallet::create([
+            'user_id' => $user->id,
+            'currency' => 'USDT',
+            'balance' => 0
+        ]);
+        
+        $userWallet->save();
+
         return response()->json(['message' => 'Email verified. Set your password now.'], 200);
     }
 
@@ -138,6 +147,8 @@ class RegisterController extends Controller
         $user->update([
             'password' => Hash::make($request->password),
         ]);
+
+
 
         return response()->json(['message' => 'Password set successfully. You can now log in.'], 200);
     }

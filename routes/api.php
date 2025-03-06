@@ -16,18 +16,12 @@ Route::group(['name' => 'App\Http\Controllers\Api'], function () {
 
     Route::apiResource('users', UserController::class);
 
-
     Route::post('/register', [RegisterController::class, 'register']);  // Step 2 - Verify OTP
     Route::post('/verify-otp', [RegisterController::class, 'verifyOtp']);  // Step 2 - Verify OTP
     Route::post('/set-password', [RegisterController::class, 'setPassword']);
     Route::post('/forget-password', [ResetPasswordController::class, 'sendResetOtp']);
     Route::post('/verify-password-otp', [ResetPasswordController::class, 'verifyResetPasswordOtp']);
     Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
-    
-
-
-
-
     Route::post('auth', [UserController::class, 'auth']);
 
     Route::middleware('auth:sanctum')->group(function () {
@@ -48,7 +42,15 @@ Route::group(['name' => 'App\Http\Controllers\Api'], function () {
         Route::get('/crypto/all', [CryptoDataController::class, 'getAllCoins']);
         Route::get('/crypto/{symbol}', [CryptoDataController::class, 'getSingleCoin']);
 
-        // Route::post('/buy-crypto', [CryptoController::class, 'buyCrypto']);
+        Route::post('/buy-crypto', [CryptoController::class, 'buyCrypto']);
+        Route::post('/sell-crypto', [CryptoController::class, 'sellCrypto']);
+        Route::post('/put-favourites', [CryptoController::class, 'favourites']);
+        Route::get('/users/{user}/balance', [CryptoController::class, 'balance']);
+        Route::get('/users/{user}/wallets', [CryptoController::class, 'walltes']);
+        Route::get('/users/{user}/favourites', [CryptoController::class, 'getFavourites']);
+        
+        Route::get('/users/{user}/profile', [UserController::class, 'profile']);
+
         // Route::get('/binance/balance', [BinanceController::class, 'balance']);
         // Route::get('/binance/prices', [BinanceController::class, 'prices']);
         // Route::get('/binance/orderbook/{symbol}', [BinanceController::class, 'orderBook']);

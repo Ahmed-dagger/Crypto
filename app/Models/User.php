@@ -26,7 +26,8 @@ class User extends Authenticatable
         'status',
         'name',
         'two_factor_enabled',
-        'google_id', 'otp',
+        'google_id',
+        'otp',
         'email_verified_at',
         'otp_expires_at',
     ];

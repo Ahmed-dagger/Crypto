@@ -19,13 +19,19 @@ class UserController extends Controller
         return User::all();
     }
 
-    public function show(User $user)
+    public function profile(User $user)
     {
-        return response()->json($user); 
-
+        return response()->json([
+            'id' => $user->id,
+            'email' => $user->email,
+            'name' => $user->name,
+            'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at
+        ]);
     }
 
-    public function auth (Request $request)
+
+    public function auth(Request $request)
     {
         $validated = $request->validate([
             'email' => 'required|email',
@@ -52,6 +58,11 @@ class UserController extends Controller
             'message' => 'Invalid credentials'
         ], 401);
     }
+
+    // public function profile (User $user)
+    // {
+
+    // }
 
 
 
