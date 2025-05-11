@@ -98,6 +98,10 @@ class User extends Authenticatable implements HasMedia
         $this->addMediaCollection('profile_pictures')->singleFile();
     }
 
+    public function bankingInformation()
+    {
+        return $this->hasMany(Bank_information::class);
+    }
 
 
 }

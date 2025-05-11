@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\AdsController;
+use App\Http\Controllers\API\BankingInformationController;
 use App\Http\Controllers\API\BinanceController;
 use App\Http\Controllers\API\CryptoController;
 use App\Http\Controllers\API\CryptoDataController;
@@ -44,7 +45,7 @@ Route::group(['name' => 'App\Http\Controllers\Api'], function () {
         Route::get('/crypto/all', [CryptoDataController::class, 'getAllCoins']);
         Route::get('/crypto/{symbol}', [CryptoDataController::class, 'getSingleCoin']);
 
-        Route::post('/put-favourites', action: [FavouritesController::class, 'add']);
+        Route::post('/put-favourites',  [FavouritesController::class, 'add']);
         Route::get('/users/{user}/favourites', [FavouritesController::class, 'show']);
         Route::delete('/users/{user}/favourites', [FavouritesController::class, 'destroy']);
 
@@ -60,11 +61,23 @@ Route::group(['name' => 'App\Http\Controllers\Api'], function () {
         Route::get('/p2p/get-sell-ad',[P2PController::class ,'getSellAds' ]);
         Route::post('/p2p/start/{id}',[P2PController::class ,'startTrade' ]);
         Route::post('/p2p/complete/{id}',[P2PController::class ,'completeTrade' ]);
+        Route::get('/p2p/user_ads',[P2PController::class ,'getMyAds' ]);
+
         Route::post('/p2p/cancel/{id}',[P2PController::class ,'cancelTrade' ]);
 
 
         //----------------------P2P-----------------------------------------------//
 
+
+        //------------------banking--------------------//
+
+        Route::get('/bank-accounts', [BankingInformationController::class, 'index']); // List all bank accounts
+        Route::post('/bank-accounts', [BankingInformationController::class, 'store']); // Create a new bank account
+        Route::get('/bank-accounts/{userId}', [BankingInformationController::class, 'show']); // Get details of a specific bank account
+        Route::put('/bank-accounts/{id}', [BankingInformationController::class, 'update']); // Update a specific bank account
+        Route::delete('/bank-accounts/{id}', [BankingInformationController::class, 'destroy']); // Delete a specific bank account
+
+        //------------------banking--------------------//
 
         //------------------payment--------------------//
         Route::post('/deposit', [PaymentController::class, 'deposit']);

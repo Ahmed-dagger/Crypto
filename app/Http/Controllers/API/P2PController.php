@@ -38,16 +38,25 @@ class P2PController extends Controller
 
     public function getBuyAds()
     {
-        $buyAds = P2P::with('user:id,name') // eager load user name
-            ->where('trade_type', 'buy')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        try {
+            $buyAds = P2P::with('user:id,name') // eager load user name
+                ->where('trade_type', 'buy')
+                ->where('user_id', '!=', Auth::id()) // exclude current user's ads
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        return response()->json([
-            'message' => 'Buy ads retrieved successfully.',
-            'data' => $buyAds,
-        ], 200);
+            return response()->json([
+                'message' => 'Buy ads retrieved successfully.',
+                'data' => $buyAds,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to retrieve buy ads.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
+
 
     public function createSellAd(Request $request)
     {
@@ -78,15 +87,23 @@ class P2PController extends Controller
 
     public function getSellAds()
     {
-        $sellAds = P2P::with('user:id,name') // Load user name
-            ->where('trade_type', 'sell')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        try {
+            $sellAds = P2P::with('user:id,name') // eager load user name
+                ->where('trade_type', 'sell')
+                ->where('user_id', '!=', Auth::id()) // exclude current user's ads
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        return response()->json([
-            'message' => 'Sell ads retrieved successfully.',
-            'data' => $sellAds,
-        ], 200);
+            return response()->json([
+                'message' => 'Sell ads retrieved successfully.',
+                'data' => $sellAds,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to retrieve sell ads.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function startTrade(Request $request, $id)
@@ -135,8 +152,6 @@ class P2PController extends Controller
             'data' => $p2p,
         ]);
     }
-
-
 
     public function completeTrade(Request $request, $id)
     {
@@ -192,7 +207,7 @@ class P2PController extends Controller
         $p2p->counterparty_id = null;
         $p2p->taken_amount = null;
         $p2p->started_at = null;
-        $p2p->transfer_status = $p2p->amount > 0 ? 'available' : 'completed';
+        $p2p->transfer_status = $p2p->amount > 0 ? 'pending' : 'completed';
         $p2p->save();
 
         return response()->json([
@@ -200,9 +215,6 @@ class P2PController extends Controller
             'data' => $p2p,
         ]);
     }
-
-
-
 
     public function cancelTrade($id)
     {
@@ -229,6 +241,16 @@ class P2PController extends Controller
         return response()->json([
             'message' => 'Trade has been cancelled successfully.',
             'data' => $p2p,
+        ]);
+    }
+
+    public function getMyAds()
+    {
+        $ads = P2P::where('user_id', Auth::id())->get();
+
+        return response()->json([
+            'message' => 'Your ads retrieved successfully.',
+            'data' => $ads,
         ]);
     }
 }
