@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
+use Laravel\Socialite\Facades\Socialite;
+use Google_Client;
+use Illuminate\Support\Str;
+
 
 class RegisterController extends Controller
 {
@@ -121,7 +125,7 @@ class RegisterController extends Controller
             'currency' => 'USDT',
             'balance' => 0
         ]);
-        
+
         $userWallet->save();
 
         return response()->json(['message' => 'Email verified. Set your password now.'], 200);
@@ -153,5 +157,79 @@ class RegisterController extends Controller
         return response()->json(['message' => 'Password set successfully. You can now log in.'], 200);
     }
 
-    
+
+
+
+    public function googleTokenLogin(Request $request)
+    {
+        $request->validate([
+            'id_token' => 'required|string',
+        ]);
+
+        $idToken = $request->input('id_token');
+
+        // Verify token using Google Client
+        $client = new \Google_Client(['client_id' => env('GOOGLE_CLIENT_ID')]);
+        $payload = $client->verifyIdToken($idToken);
+
+        if (!$payload) {
+            return response()->json(['error' => 'Invalid ID token'], 401);
+        }
+
+        // Extract user info from token
+        $googleId = $payload['sub'];
+        $email = $payload['email'] ?? null;
+        $name = $payload['name'] ?? 'Unknown';
+
+        if (!$email) {
+            return response()->json(['error' => 'Email not provided in token'], 422);
+        }
+
+        // Look for existing user
+        $user = User::where('google_id', $googleId)->orWhere('email', $email)->first();
+
+        if (!$user) {
+            // First-time Google registration
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'google_id' => $googleId,
+                'email_verified_at' => now(),
+                'password' => bcrypt(Str::random(16)), // Random password
+            ]);
+
+            // Optionally create default wallet
+            Wallet::create([
+                'user_id' => $user->id,
+                'currency' => 'USDT',
+                'balance' => 0,
+            ]);
+        } else {
+            // If user exists but doesn't have a google_id, assign it
+            $updated = false;
+
+            if (!$user->google_id) {
+                $user->google_id = $googleId;
+                $updated = true;
+            }
+
+            if (!$user->email_verified_at) {
+                $user->email_verified_at = now();
+                $updated = true;
+            }
+
+            if ($updated) {
+                $user->save();
+            }
+        }
+
+        // Create personal access token (e.g., Sanctum)
+        $token = $user->createToken('google-login')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Logged in with Google successfully.',
+            'token' => $token,
+            'user' => $user,
+        ]);
+    }
 }

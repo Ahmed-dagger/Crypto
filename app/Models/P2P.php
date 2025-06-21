@@ -26,6 +26,7 @@ class P2P extends Model implements HasMedia
         'transfer_status',
         'note',
         'trade_reference',
+        'payment_details',
     ];
 
     protected $casts = [

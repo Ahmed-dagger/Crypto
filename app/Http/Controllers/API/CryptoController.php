@@ -276,31 +276,31 @@ class CryptoController extends Controller
     {
         // Get all wallet entries for the user
         $wallets = Wallet::where('user_id', $user->id)->get();
-    
+
         if ($wallets->isEmpty()) {
             return response()->json([
                 'message' => 'No favourite coins found.',
                 'data' => [],
             ], 200);
         }
-    
+
         // Fetch all coins data from the service
         $allCoins = $coinGeckoService->getAllCoinsData();
-    
+
         // Filter and map the coins with balance
         $filteredCoins = $wallets->map(function ($wallet) use ($allCoins) {
             $coin = $allCoins->firstWhere('id', $wallet->currency);
-    
+
             if ($coin) {
                 $coin['balance'] = $wallet->balance;
                 return $coin;
             }
-    
+
             return null;
         })->filter()->values(); // Remove nulls and reindex
-    
+
         $numberOfCoins = $filteredCoins->count();
-    
+
         return response()->json([
             'message' => 'Success',
             'data' => [
@@ -309,7 +309,7 @@ class CryptoController extends Controller
             ],
         ], 200);
     }
-    
+
 
     public function userCoins(Request $request)
     {
@@ -381,7 +381,89 @@ class CryptoController extends Controller
             'success' => true,
             'message' => 'Transactions retrieved successfully',
             'data' => $transactions
-            
+
         ]);
     }
+
+public function liveWallet(Request $request, CoinGeckoService $coinGeckoService, User $user)
+{
+    // Get all user wallets
+    $wallets = Wallet::where('user_id', $user->id)->get();
+
+    if ($wallets->isEmpty()) {
+        return response()->json([
+            'message' => 'No coins found in wallet.',
+            'data' => [],
+        ], 200);
+    }
+
+    // Get USDT wallet
+    $usdtWallet = $wallets->firstWhere('currency', 'tether') ?? $wallets->firstWhere('currency', 'USDT');
+    $usdtBalance = $usdtWallet ? $usdtWallet->balance : 0;
+
+    // Extract coin IDs
+    $coinIds = $wallets->pluck('currency')->toArray();
+
+    // Get live prices from CoinGecko
+    $livePrices = $coinGeckoService->getLivePrices($coinIds);
+
+    // Map wallet data
+    $walletData = $wallets->map(function ($wallet) use ($livePrices) {
+        $coinId = $wallet->currency;
+
+        if (!isset($livePrices[$coinId])) {
+            return null;
+        }
+
+        $priceData = $livePrices[$coinId];
+        $currentPrice = $priceData['usd'];
+        $priceChange24h = $priceData['usd_24h_change'];
+
+        $balance = $wallet->balance;
+        $avgBuyPrice = $wallet->avg_buy_price ?? 0;
+
+        $currentValue = $balance * $currentPrice;
+        $initialValue = $balance * $avgBuyPrice;
+        $profitLoss = $currentValue - $initialValue;
+
+        return [
+            'coin' => $coinId,
+            'balance' => $balance,
+            'current_price' => $currentPrice,
+            'value_usd' => round($currentValue, 2),
+            '24h_change_percent' => round($priceChange24h, 2),
+            'profit_loss_usd' => round($profitLoss, 2),
+        ];
+    })->filter()->values();
+
+    // If USDT exists, push it
+    if ($usdtWallet) {
+        $walletData->push([
+            'coin' => 'tether',
+            'balance' => $usdtBalance,
+            'current_price' => 1.00,
+            'value_usd' => round($usdtBalance, 2),
+            '24h_change_percent' => 0,
+            'profit_loss_usd' => 0,
+        ]);
+    }
+
+    $totalBalance = $walletData->sum('value_usd');
+    $totalProfitLoss = $walletData->sum('profit_loss_usd');
+    $totalProfitLossPercentage = ($totalBalance > 0)
+        ? ($totalProfitLoss > 0 ? round(($totalProfitLoss / $totalBalance) * 100, 2) : 0)
+        : 0;
+
+    return response()->json([
+        'message' => 'Live wallet summary',
+        'data' => [
+            'wallets' => $walletData,
+            'total_balance_usd' => round($totalBalance, 2),
+            'total_profit_loss_usd' => round($totalProfitLoss, 2),
+            'total_profit_loss_percentage' => $totalProfitLossPercentage,
+            'usdt_wallet_balance' => round($usdtBalance, 2), // <- added field
+        ]
+    ]);
+}
+
 }

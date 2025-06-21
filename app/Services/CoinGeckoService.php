@@ -129,9 +129,9 @@ class CoinGeckoService
             if ($response->failed()) {
 
                 $cachedData = Cache::get($cacheKey);
-                    if ($cachedData) {
-                        return $cachedData;
-                    }
+                if ($cachedData) {
+                    return $cachedData;
+                }
                 return response()->json(['error' => 'Failed to fetch coin data'], 500);
             }
 
@@ -215,5 +215,23 @@ class CoinGeckoService
         }
 
         return $chartData;
+    }
+
+    public function getLivePrices(array $coinIds)
+    {
+        $ids = implode(',', $coinIds);
+        $url = "{$this->baseUrl}/simple/price";
+
+        $response = Http::get($url, [
+            'ids' => $ids,
+            'vs_currencies' => 'usd',
+            'include_24hr_change' => 'true',
+        ]);
+
+        if ($response->successful()) {
+            return $response->json(); // Example: ['bitcoin' => ['usd' => 62000, 'usd_24h_change' => 1.23], ...]
+        }
+
+        return [];
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class P2PController extends Controller
 {
+    //----------------------Buy Ad Methods----------------------//
     public function createBuyAd(Request $request)
     {
         $validated = $request->validate([
@@ -17,6 +18,7 @@ class P2PController extends Controller
             'fiat_amount' => 'required|numeric|min:0.01',
             'fiat_currency' => 'required|string|max:10',
             'payment_method' => 'required|string|max:255',
+            'payment_details' => 'nullable|string', // <- added
         ]);
 
         $p2p = P2P::create([
@@ -27,6 +29,7 @@ class P2PController extends Controller
             'fiat_amount' => $validated['fiat_amount'],
             'fiat_currency' => $validated['fiat_currency'],
             'payment_method' => $validated['payment_method'],
+            'payment_details' => $validated['payment_details'] ?? null, // <- added
             'transfer_status' => 'pending',
         ]);
 
@@ -35,6 +38,7 @@ class P2PController extends Controller
             'data' => $p2p,
         ], 200);
     }
+
 
     public function getBuyAds()
     {
@@ -57,6 +61,56 @@ class P2PController extends Controller
         }
     }
 
+    public function editBuyAd(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'currency' => 'sometimes|required|string|max:10',
+            'amount' => 'sometimes|required|numeric|min:0.0001',
+            'fiat_amount' => 'sometimes|required|numeric|min:0.01',
+            'fiat_currency' => 'sometimes|required|string|max:10',
+            'payment_method' => 'sometimes|required|string|max:255',
+            'payment_details' => 'nullable|string',
+        ]);
+
+        $p2p = P2P::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->where('trade_type', 'buy')
+            ->first();
+
+        if (!$p2p) {
+            return response()->json(['message' => 'Buy ad not found or unauthorized'], 404);
+        }
+
+        $p2p->update($validated);
+
+        return response()->json([
+            'message' => 'Buy ad updated successfully.',
+            'data' => $p2p,
+        ], 200);
+    }
+
+
+    public function deleteBuyAd($id)
+    {
+        $p2p = P2P::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->where('trade_type', 'buy')
+            ->first();
+
+        if (!$p2p) {
+            return response()->json(['message' => 'Buy ad not found or unauthorized'], 404);
+        }
+
+        $p2p->delete();
+
+        return response()->json(['message' => 'Buy ad deleted successfully.'], 200);
+    }
+
+
+
+
+    //----------------------Sell Ad Methods----------------------//
+
 
     public function createSellAd(Request $request)
     {
@@ -66,6 +120,7 @@ class P2PController extends Controller
             'fiat_amount' => 'required|numeric|min:0.01',
             'fiat_currency' => 'required|string|max:10',
             'payment_method' => 'required|string|max:255',
+            'payment_details' => 'nullable|string', // <- added
         ]);
 
         $p2p = P2P::create([
@@ -76,14 +131,60 @@ class P2PController extends Controller
             'fiat_amount' => $validated['fiat_amount'],
             'fiat_currency' => $validated['fiat_currency'],
             'payment_method' => $validated['payment_method'],
+            'payment_details' => $validated['payment_details'] ?? null, // <- added
             'transfer_status' => 'pending',
         ]);
 
         return response()->json([
-            'message' => 'Buy P2P ad created successfully.',
+            'message' => 'Sell P2P ad created successfully.',
             'data' => $p2p,
         ], 200);
     }
+
+    public function editSellAd(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'currency' => 'sometimes|required|string|max:10',
+            'amount' => 'sometimes|required|numeric|min:0.0001',
+            'fiat_amount' => 'sometimes|required|numeric|min:0.01',
+            'fiat_currency' => 'sometimes|required|string|max:10',
+            'payment_method' => 'sometimes|required|string|max:255',
+            'payment_details' => 'nullable|string',
+        ]);
+
+        $p2p = P2P::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->where('trade_type', 'sell')
+            ->first();
+
+        if (!$p2p) {
+            return response()->json(['message' => 'Sell ad not found or unauthorized'], 404);
+        }
+
+        $p2p->update($validated);
+
+        return response()->json([
+            'message' => 'Sell ad updated successfully.',
+            'data' => $p2p,
+        ], 200);
+    }
+
+    public function deleteSellAd($id)
+    {
+        $p2p = P2P::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->where('trade_type', 'sell')
+            ->first();
+
+        if (!$p2p) {
+            return response()->json(['message' => 'Sell ad not found or unauthorized'], 404);
+        }
+
+        $p2p->delete();
+
+        return response()->json(['message' => 'Sell ad deleted successfully.'], 200);
+    }
+
 
     public function getSellAds()
     {
@@ -105,6 +206,9 @@ class P2PController extends Controller
             ], 500);
         }
     }
+
+
+    //-----------------------Trade Methods----------------------//
 
     public function startTrade(Request $request, $id)
     {

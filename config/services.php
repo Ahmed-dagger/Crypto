@@ -40,8 +40,15 @@ return [
     ],
 
     'binance' => [
-        'key' => env('BINANCE_API_KEY'),
-        'secret' => env('BINANCE_API_SECRET'),
+        'api_key' => env('BINANCE_API_KEY'),
+        'secret_key' => env('BINANCE_API_SECRET'),
+        'base_url' => env('BINANCE_BASE_URL'),
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'), // e.g., https://yourapp.com/api/auth/google/callback
     ],
 
 ];
